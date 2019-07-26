@@ -1,6 +1,9 @@
 package influxdb
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+)
 
 // ErrSecretNotFound is the error msg for a missing secret.
 const ErrSecretNotFound = "secret not found"
@@ -24,4 +27,27 @@ type SecretService interface {
 
 	// DeleteSecret removes a single secret from the secret store.
 	DeleteSecret(ctx context.Context, orgID ID, ks ...string) error
+}
+
+// SecretField is a key string, can be used to fetch the secret value.
+type SecretField string
+
+// String returns the key of the secret.
+func (s SecretField) String() string {
+	return "secret: " + string(s)
+}
+
+// MarshalJSON implement the json marshaler interface.
+func (s SecretField) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+// UnmarshalJSON implement the json unmarshaler interface.
+func (s *SecretField) UnmarshalJSON(b []byte) error {
+	var ss string
+	if err := json.Unmarshal(b, &ss); err != nil {
+		return err
+	}
+	*s = SecretField(ss[len("secret: "):])
+	return nil
 }
